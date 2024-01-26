@@ -4,12 +4,11 @@ import (
 	"encoding/json"
 
 	"github.com/BurntSushi/toml"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 var (
-	defaultUnmarshaler = toml.Unmarshal
-	unmarshalers       = map[string]func([]byte, any) error{
+	unmarshalers = map[string]func([]byte, any) error{
 		".yaml": yaml.Unmarshal,
 		".yml":  yaml.Unmarshal,
 		".toml": toml.Unmarshal,

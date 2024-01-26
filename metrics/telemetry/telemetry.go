@@ -1,4 +1,4 @@
-package metrics
+package telemetry
 
 import (
 	"context"
@@ -19,49 +19,61 @@ const (
 	reportTimeout  = time.Second * 3
 )
 
-type OptionExporter func(*metricsExporter)
+type Option func(*telemetryAgent)
 
-func ReportInterval(v time.Duration) OptionExporter {
-	return func(me *metricsExporter) {
-		me.reportInterval = v
+func ReportInterval(v time.Duration) Option {
+	return func(t *telemetryAgent) {
+		t.reportInterval = v
 	}
 }
 
-func ReportTimeout(v time.Duration) OptionExporter {
-	return func(me *metricsExporter) {
-		me.reportTimeout = v
+func ReportTimeout(v time.Duration) Option {
+	return func(t *telemetryAgent) {
+		t.reportTimeout = v
 	}
 }
 
-type metricsExporter struct {
+func GRPCConn(v *grpc.ClientConn) Option {
+	return func(t *telemetryAgent) {
+		t.conn = v
+	}
+}
+
+type telemetryAgent struct {
 	meter          api.Meter
+	conn           *grpc.ClientConn
 	reportInterval time.Duration
 	reportTimeout  time.Duration
 }
 
-func NewMetricsExporter(addr string, opts ...OptionExporter) (*metricsExporter, error) {
+func NewTelemetryAgent(addr string, opts ...Option) (*telemetryAgent, error) {
 	if addr == "" {
 		return nil, errors.Errorf("missing metrics rpc agent address")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
-	defer cancel()
-	conn, err := grpc.DialContext(ctx, addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, err
-	}
-
-	exporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithGRPCConn(conn))
-	if err != nil {
-		return nil, err
-	}
-
-	m := &metricsExporter{
+	m := &telemetryAgent{
 		reportInterval: reportInterval,
 		reportTimeout:  reportTimeout,
 	}
 	for _, f := range opts {
 		f(m)
+	}
+
+	if m.conn == nil {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+		defer cancel()
+		conn, err := grpc.DialContext(ctx, addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		if err != nil {
+			return nil, err
+		}
+		m.conn = conn
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+	exporter, err := otlpmetricgrpc.New(ctx, otlpmetricgrpc.WithGRPCConn(m.conn))
+	if err != nil {
+		return nil, err
 	}
 
 	res, err := resource.New(context.Background(), resource.WithAttributes())
@@ -83,7 +95,7 @@ func NewMetricsExporter(addr string, opts ...OptionExporter) (*metricsExporter, 
 // Int64Counter returns a new Int64Counter instrument identified by name
 // and configured with options. The instrument is used to synchronously
 // record increasing int64 measurements during a computational operation.
-func (m *metricsExporter) Int64Counter(name string, options ...api.Int64CounterOption) (api.Int64Counter, error) {
+func (m *telemetryAgent) Int64Counter(name string, options ...api.Int64CounterOption) (api.Int64Counter, error) {
 	if m == nil || m.meter == nil {
 		return nil, errors.Errorf("metrics meter is invalid")
 	}
@@ -94,7 +106,7 @@ func (m *metricsExporter) Int64Counter(name string, options ...api.Int64CounterO
 // identified by name and configured with options. The instrument is used
 // to synchronously record int64 measurements during a computational
 // operation.
-func (m *metricsExporter) Int64UpDownCounter(name string, options ...api.Int64UpDownCounterOption) (api.Int64UpDownCounter, error) {
+func (m *telemetryAgent) Int64UpDownCounter(name string, options ...api.Int64UpDownCounterOption) (api.Int64UpDownCounter, error) {
 	if m == nil || m.meter == nil {
 		return nil, errors.Errorf("metrics meter is invalid")
 	}
@@ -105,7 +117,8 @@ func (m *metricsExporter) Int64UpDownCounter(name string, options ...api.Int64Up
 // name and configured with options. The instrument is used to
 // synchronously record the distribution of int64 measurements during a
 // computational operation.
-func (m *metricsExporter) Int64Histogram(name string, options ...api.Int64HistogramOption) (api.Int64Histogram, error) {
+// metric.WithExplicitBucketBoundaries to exclipt set buckets
+func (m *telemetryAgent) Int64Histogram(name string, options ...api.Int64HistogramOption) (api.Int64Histogram, error) {
 	if m == nil || m.meter == nil {
 		return nil, errors.Errorf("metrics meter is invalid")
 	}
@@ -116,7 +129,7 @@ func (m *metricsExporter) Int64Histogram(name string, options ...api.Int64Histog
 // name and configured with options. The instrument is used to
 // synchronously record increasing float64 measurements during a
 // computational operation.
-func (m *metricsExporter) Float64Counter(name string, options ...api.Float64CounterOption) (api.Float64Counter, error) {
+func (m *telemetryAgent) Float64Counter(name string, options ...api.Float64CounterOption) (api.Float64Counter, error) {
 	if m == nil || m.meter == nil {
 		return nil, errors.Errorf("metrics meter is invalid")
 	}
@@ -127,7 +140,7 @@ func (m *metricsExporter) Float64Counter(name string, options ...api.Float64Coun
 // identified by name and configured with options. The instrument is used
 // to synchronously record float64 measurements during a computational
 // operation.
-func (m *metricsExporter) Float64UpDownCounter(name string, options ...api.Float64UpDownCounterOption) (api.Float64UpDownCounter, error) {
+func (m *telemetryAgent) Float64UpDownCounter(name string, options ...api.Float64UpDownCounterOption) (api.Float64UpDownCounter, error) {
 	if m == nil || m.meter == nil {
 		return nil, errors.Errorf("metrics meter is invalid")
 	}
@@ -138,7 +151,7 @@ func (m *metricsExporter) Float64UpDownCounter(name string, options ...api.Float
 // name and configured with options. The instrument is used to
 // synchronously record the distribution of float64 measurements during a
 // computational operation.
-func (m *metricsExporter) Float64Histogram(name string, options ...api.Float64HistogramOption) (api.Float64Histogram, error) {
+func (m *telemetryAgent) Float64Histogram(name string, options ...api.Float64HistogramOption) (api.Float64Histogram, error) {
 	if m == nil || m.meter == nil {
 		return nil, errors.Errorf("metrics meter is invalid")
 	}
@@ -158,7 +171,7 @@ func (m *metricsExporter) Float64Histogram(name string, options ...api.Float64Hi
 // during collection.
 //
 // The function f needs to be concurrent safe.
-func (m *metricsExporter) RegisterInt64CounterCallback(f func() []ObserverInt64, name string, options ...api.Int64ObservableCounterOption) (api.Registration, error) {
+func (m *telemetryAgent) RegisterInt64CounterCallback(f func() []ObserverInt64, name string, options ...api.Int64ObservableCounterOption) (api.Registration, error) {
 	if m == nil || m.meter == nil {
 		return nil, errors.Errorf("metrics meter is invalid")
 	}
@@ -175,7 +188,7 @@ func (m *metricsExporter) RegisterInt64CounterCallback(f func() []ObserverInt64,
 	}, c)
 }
 
-func (m *metricsExporter) RegisterInt64UpDownCounterCallback(f func() []ObserverInt64, name string, options ...api.Int64ObservableUpDownCounterOption) (api.Registration, error) {
+func (m *telemetryAgent) RegisterInt64UpDownCounterCallback(f func() []ObserverInt64, name string, options ...api.Int64ObservableUpDownCounterOption) (api.Registration, error) {
 	if m == nil || m.meter == nil {
 		return nil, errors.Errorf("metrics meter is invalid")
 	}
@@ -192,7 +205,7 @@ func (m *metricsExporter) RegisterInt64UpDownCounterCallback(f func() []Observer
 	}, c)
 }
 
-func (m *metricsExporter) RegisterInt64GaugeCallback(f func() []ObserverInt64, name string, options ...api.Int64ObservableGaugeOption) (api.Registration, error) {
+func (m *telemetryAgent) RegisterInt64GaugeCallback(f func() []ObserverInt64, name string, options ...api.Int64ObservableGaugeOption) (api.Registration, error) {
 	if m == nil || m.meter == nil {
 		return nil, errors.Errorf("metrics meter is invalid")
 	}
@@ -209,7 +222,7 @@ func (m *metricsExporter) RegisterInt64GaugeCallback(f func() []ObserverInt64, n
 	}, g)
 }
 
-func (m *metricsExporter) RegisterFloat64CounterCallback(f func() []ObserverFloat64, name string, options ...api.Float64ObservableCounterOption) (api.Registration, error) {
+func (m *telemetryAgent) RegisterFloat64CounterCallback(f func() []ObserverFloat64, name string, options ...api.Float64ObservableCounterOption) (api.Registration, error) {
 	if m == nil || m.meter == nil {
 		return nil, errors.Errorf("metrics meter is invalid")
 	}
@@ -226,7 +239,7 @@ func (m *metricsExporter) RegisterFloat64CounterCallback(f func() []ObserverFloa
 	}, c)
 }
 
-func (m *metricsExporter) RegisterFloat64UpDownCounterCallback(f func() []ObserverFloat64, name string, options ...api.Float64ObservableUpDownCounterOption) (api.Registration, error) {
+func (m *telemetryAgent) RegisterFloat64UpDownCounterCallback(f func() []ObserverFloat64, name string, options ...api.Float64ObservableUpDownCounterOption) (api.Registration, error) {
 	if m == nil || m.meter == nil {
 		return nil, errors.Errorf("metrics meter is invalid")
 	}
@@ -243,7 +256,7 @@ func (m *metricsExporter) RegisterFloat64UpDownCounterCallback(f func() []Observ
 	}, c)
 }
 
-func (m *metricsExporter) RegisterFloat64GaugeCallback(f func() []ObserverFloat64, name string, options ...api.Float64ObservableGaugeOption) (api.Registration, error) {
+func (m *telemetryAgent) RegisterFloat64GaugeCallback(f func() []ObserverFloat64, name string, options ...api.Float64ObservableGaugeOption) (api.Registration, error) {
 	if m == nil || m.meter == nil {
 		return nil, errors.Errorf("metrics meter is invalid")
 	}

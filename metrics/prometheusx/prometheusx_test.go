@@ -1,19 +1,19 @@
-package prome_test
+package prometheusx_test
 
 import (
 	"testing"
 	"time"
 
-	"github.com/cocktail828/go-kits/metrics/prome"
+	"github.com/cocktail828/go-kits/metrics/prometheusx"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 func TestPrometheus(t *testing.T) {
-	srv := prome.NewMetricsServer(nil)
+	srv := prometheusx.NewMetricsServer(nil)
 	go srv.Run(":8080")
 
 	// gauge
-	gauge := srv.RegisterGauge(prome.CollectorOpt{
+	gauge := srv.RegisterGauge(prometheusx.CollectorOpt{
 		Namespace: "dbproxy",
 		Subsystem: "accesser",
 		Name:      "dts_gauge",
@@ -21,14 +21,14 @@ func TestPrometheus(t *testing.T) {
 	gauge.Set(1)
 
 	// counter
-	counter := srv.RegisterCounter(prome.CollectorOpt{
+	counter := srv.RegisterCounter(prometheusx.CollectorOpt{
 		Namespace: "dbproxy",
 		Subsystem: "accesser",
 		Name:      "dts_counter",
 	})
 	counter.Add(100)
 
-	vec := srv.RegisterCounterVec(prome.CollectorOpt{
+	vec := srv.RegisterCounterVec(prometheusx.CollectorOpt{
 		Namespace: "dbproxy",
 		Subsystem: "accesser",
 		Name:      "dts_counter_vec",
@@ -36,7 +36,7 @@ func TestPrometheus(t *testing.T) {
 	vec.WithLabelValues("18934", "kajsdf sdkfj").Inc()
 
 	// histogram
-	histogram := srv.RegisterHistogram(prome.CollectorOpt{
+	histogram := srv.RegisterHistogram(prometheusx.CollectorOpt{
 		Namespace: "dbproxy",
 		Subsystem: "accesser",
 		Name:      "dts_histogram",

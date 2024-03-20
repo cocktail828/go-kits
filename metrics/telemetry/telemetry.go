@@ -92,12 +92,16 @@ func NewTelemetryAgent(addr string, opts ...Option) (*telemetryAgent, error) {
 	return m, nil
 }
 
+var (
+	ErrInvalidMetric = errors.New("metrics meter is invalid")
+)
+
 // Int64Counter returns a new Int64Counter instrument identified by name
 // and configured with options. The instrument is used to synchronously
 // record increasing int64 measurements during a computational operation.
 func (m *telemetryAgent) Int64Counter(name string, options ...api.Int64CounterOption) (api.Int64Counter, error) {
 	if m == nil || m.meter == nil {
-		return nil, errors.Errorf("metrics meter is invalid")
+		return nil, ErrInvalidMetric
 	}
 	return m.meter.Int64Counter(name, options...)
 }
@@ -108,7 +112,7 @@ func (m *telemetryAgent) Int64Counter(name string, options ...api.Int64CounterOp
 // operation.
 func (m *telemetryAgent) Int64UpDownCounter(name string, options ...api.Int64UpDownCounterOption) (api.Int64UpDownCounter, error) {
 	if m == nil || m.meter == nil {
-		return nil, errors.Errorf("metrics meter is invalid")
+		return nil, ErrInvalidMetric
 	}
 	return m.meter.Int64UpDownCounter(name, options...)
 }
@@ -120,7 +124,7 @@ func (m *telemetryAgent) Int64UpDownCounter(name string, options ...api.Int64UpD
 // metric.WithExplicitBucketBoundaries to exclipt set buckets
 func (m *telemetryAgent) Int64Histogram(name string, options ...api.Int64HistogramOption) (api.Int64Histogram, error) {
 	if m == nil || m.meter == nil {
-		return nil, errors.Errorf("metrics meter is invalid")
+		return nil, ErrInvalidMetric
 	}
 	return m.meter.Int64Histogram(name, options...)
 }
@@ -131,7 +135,7 @@ func (m *telemetryAgent) Int64Histogram(name string, options ...api.Int64Histogr
 // computational operation.
 func (m *telemetryAgent) Float64Counter(name string, options ...api.Float64CounterOption) (api.Float64Counter, error) {
 	if m == nil || m.meter == nil {
-		return nil, errors.Errorf("metrics meter is invalid")
+		return nil, ErrInvalidMetric
 	}
 	return m.meter.Float64Counter(name, options...)
 }
@@ -142,7 +146,7 @@ func (m *telemetryAgent) Float64Counter(name string, options ...api.Float64Count
 // operation.
 func (m *telemetryAgent) Float64UpDownCounter(name string, options ...api.Float64UpDownCounterOption) (api.Float64UpDownCounter, error) {
 	if m == nil || m.meter == nil {
-		return nil, errors.Errorf("metrics meter is invalid")
+		return nil, ErrInvalidMetric
 	}
 	return m.meter.Float64UpDownCounter(name, options...)
 }
@@ -153,7 +157,7 @@ func (m *telemetryAgent) Float64UpDownCounter(name string, options ...api.Float6
 // computational operation.
 func (m *telemetryAgent) Float64Histogram(name string, options ...api.Float64HistogramOption) (api.Float64Histogram, error) {
 	if m == nil || m.meter == nil {
-		return nil, errors.Errorf("metrics meter is invalid")
+		return nil, ErrInvalidMetric
 	}
 	return m.meter.Float64Histogram(name, options...)
 }
@@ -173,7 +177,7 @@ func (m *telemetryAgent) Float64Histogram(name string, options ...api.Float64His
 // The function f needs to be concurrent safe.
 func (m *telemetryAgent) RegisterInt64CounterCallback(f func() []ObserverInt64, name string, options ...api.Int64ObservableCounterOption) (api.Registration, error) {
 	if m == nil || m.meter == nil {
-		return nil, errors.Errorf("metrics meter is invalid")
+		return nil, ErrInvalidMetric
 	}
 
 	c, err := m.meter.Int64ObservableCounter(name, options...)
@@ -190,7 +194,7 @@ func (m *telemetryAgent) RegisterInt64CounterCallback(f func() []ObserverInt64, 
 
 func (m *telemetryAgent) RegisterInt64UpDownCounterCallback(f func() []ObserverInt64, name string, options ...api.Int64ObservableUpDownCounterOption) (api.Registration, error) {
 	if m == nil || m.meter == nil {
-		return nil, errors.Errorf("metrics meter is invalid")
+		return nil, ErrInvalidMetric
 	}
 
 	c, err := m.meter.Int64ObservableUpDownCounter(name, options...)
@@ -207,7 +211,7 @@ func (m *telemetryAgent) RegisterInt64UpDownCounterCallback(f func() []ObserverI
 
 func (m *telemetryAgent) RegisterInt64GaugeCallback(f func() []ObserverInt64, name string, options ...api.Int64ObservableGaugeOption) (api.Registration, error) {
 	if m == nil || m.meter == nil {
-		return nil, errors.Errorf("metrics meter is invalid")
+		return nil, ErrInvalidMetric
 	}
 
 	g, err := m.meter.Int64ObservableGauge(name, options...)
@@ -224,7 +228,7 @@ func (m *telemetryAgent) RegisterInt64GaugeCallback(f func() []ObserverInt64, na
 
 func (m *telemetryAgent) RegisterFloat64CounterCallback(f func() []ObserverFloat64, name string, options ...api.Float64ObservableCounterOption) (api.Registration, error) {
 	if m == nil || m.meter == nil {
-		return nil, errors.Errorf("metrics meter is invalid")
+		return nil, ErrInvalidMetric
 	}
 
 	c, err := m.meter.Float64ObservableCounter(name, options...)
@@ -241,7 +245,7 @@ func (m *telemetryAgent) RegisterFloat64CounterCallback(f func() []ObserverFloat
 
 func (m *telemetryAgent) RegisterFloat64UpDownCounterCallback(f func() []ObserverFloat64, name string, options ...api.Float64ObservableUpDownCounterOption) (api.Registration, error) {
 	if m == nil || m.meter == nil {
-		return nil, errors.Errorf("metrics meter is invalid")
+		return nil, ErrInvalidMetric
 	}
 
 	c, err := m.meter.Float64ObservableUpDownCounter(name, options...)
@@ -258,7 +262,7 @@ func (m *telemetryAgent) RegisterFloat64UpDownCounterCallback(f func() []Observe
 
 func (m *telemetryAgent) RegisterFloat64GaugeCallback(f func() []ObserverFloat64, name string, options ...api.Float64ObservableGaugeOption) (api.Registration, error) {
 	if m == nil || m.meter == nil {
-		return nil, errors.Errorf("metrics meter is invalid")
+		return nil, ErrInvalidMetric
 	}
 
 	g, err := m.meter.Float64ObservableGauge(name, options...)

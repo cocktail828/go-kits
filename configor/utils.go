@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -103,11 +104,8 @@ func (c *Configor) processTags(config interface{}, prefixes ...string) error {
 			if value := os.Getenv(name); value != "" {
 				switch reflect.Indirect(field).Kind() {
 				case reflect.Bool:
-					switch strings.ToLower(value) {
-					case "", "0", "f", "false":
-						field.Set(reflect.ValueOf(false))
-					default:
-						field.Set(reflect.ValueOf(true))
+					if val, err := strconv.ParseBool(strings.ToLower(value)); err == nil {
+						field.Set(reflect.ValueOf(val))
 					}
 					break loop
 				case reflect.String:
@@ -125,7 +123,7 @@ func (c *Configor) processTags(config interface{}, prefixes ...string) error {
 
 		if isBlank := reflect.DeepEqual(field.Interface(), reflect.Zero(field.Type()).Interface()); isBlank && fieldStruct.Tag.Get("required") == "true" {
 			// return error if it is required but blank
-			return errors.New(fieldStruct.Name + " is required, but blank")
+			return errors.New(fieldStruct.Name + " is required, but not set")
 		}
 
 		for field.Kind() == reflect.Ptr {

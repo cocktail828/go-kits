@@ -175,7 +175,7 @@ func (m *telemetryAgent) Float64Histogram(name string, options ...api.Float64His
 // during collection.
 //
 // The function f needs to be concurrent safe.
-func (m *telemetryAgent) RegisterInt64CounterCallback(f func() []ObserverInt64, name string, options ...api.Int64ObservableCounterOption) (api.Registration, error) {
+func (m *telemetryAgent) RegisterInt64CounterCallback(f Int64Callback, name string, options ...api.Int64ObservableCounterOption) (api.Registration, error) {
 	if m == nil || m.meter == nil {
 		return nil, ErrInvalidMetric
 	}
@@ -185,14 +185,13 @@ func (m *telemetryAgent) RegisterInt64CounterCallback(f func() []ObserverInt64, 
 		return nil, err
 	}
 	return m.meter.RegisterCallback(func(ctx context.Context, o api.Observer) error {
-		for _, v := range f() {
-			o.ObserveInt64(c, v.Value, v.Options...)
-		}
-		return nil
+		v, err := f()
+		o.ObserveInt64(c, v.Value, v.Options...)
+		return err
 	}, c)
 }
 
-func (m *telemetryAgent) RegisterInt64UpDownCounterCallback(f func() []ObserverInt64, name string, options ...api.Int64ObservableUpDownCounterOption) (api.Registration, error) {
+func (m *telemetryAgent) RegisterInt64UpDownCounterCallback(f Int64Callback, name string, options ...api.Int64ObservableUpDownCounterOption) (api.Registration, error) {
 	if m == nil || m.meter == nil {
 		return nil, ErrInvalidMetric
 	}
@@ -202,14 +201,13 @@ func (m *telemetryAgent) RegisterInt64UpDownCounterCallback(f func() []ObserverI
 		return nil, err
 	}
 	return m.meter.RegisterCallback(func(ctx context.Context, o api.Observer) error {
-		for _, v := range f() {
-			o.ObserveInt64(c, v.Value, v.Options...)
-		}
-		return nil
+		v, err := f()
+		o.ObserveInt64(c, v.Value, v.Options...)
+		return err
 	}, c)
 }
 
-func (m *telemetryAgent) RegisterInt64GaugeCallback(f func() []ObserverInt64, name string, options ...api.Int64ObservableGaugeOption) (api.Registration, error) {
+func (m *telemetryAgent) RegisterInt64GaugeCallback(f Int64Callback, name string, options ...api.Int64ObservableGaugeOption) (api.Registration, error) {
 	if m == nil || m.meter == nil {
 		return nil, ErrInvalidMetric
 	}
@@ -219,14 +217,13 @@ func (m *telemetryAgent) RegisterInt64GaugeCallback(f func() []ObserverInt64, na
 		return nil, err
 	}
 	return m.meter.RegisterCallback(func(ctx context.Context, o api.Observer) error {
-		for _, v := range f() {
-			o.ObserveInt64(g, v.Value, v.Options...)
-		}
-		return nil
+		v, err := f()
+		o.ObserveInt64(g, v.Value, v.Options...)
+		return err
 	}, g)
 }
 
-func (m *telemetryAgent) RegisterFloat64CounterCallback(f func() []ObserverFloat64, name string, options ...api.Float64ObservableCounterOption) (api.Registration, error) {
+func (m *telemetryAgent) RegisterFloat64CounterCallback(f Float64Callback, name string, options ...api.Float64ObservableCounterOption) (api.Registration, error) {
 	if m == nil || m.meter == nil {
 		return nil, ErrInvalidMetric
 	}
@@ -236,14 +233,13 @@ func (m *telemetryAgent) RegisterFloat64CounterCallback(f func() []ObserverFloat
 		return nil, err
 	}
 	return m.meter.RegisterCallback(func(ctx context.Context, o api.Observer) error {
-		for _, v := range f() {
-			o.ObserveFloat64(c, v.Value, v.Options...)
-		}
-		return nil
+		v, err := f()
+		o.ObserveFloat64(c, v.Value, v.Options...)
+		return err
 	}, c)
 }
 
-func (m *telemetryAgent) RegisterFloat64UpDownCounterCallback(f func() []ObserverFloat64, name string, options ...api.Float64ObservableUpDownCounterOption) (api.Registration, error) {
+func (m *telemetryAgent) RegisterFloat64UpDownCounterCallback(f Float64Callback, name string, options ...api.Float64ObservableUpDownCounterOption) (api.Registration, error) {
 	if m == nil || m.meter == nil {
 		return nil, ErrInvalidMetric
 	}
@@ -253,14 +249,13 @@ func (m *telemetryAgent) RegisterFloat64UpDownCounterCallback(f func() []Observe
 		return nil, err
 	}
 	return m.meter.RegisterCallback(func(ctx context.Context, o api.Observer) error {
-		for _, v := range f() {
-			o.ObserveFloat64(c, v.Value, v.Options...)
-		}
-		return nil
+		v, err := f()
+		o.ObserveFloat64(c, v.Value, v.Options...)
+		return err
 	}, c)
 }
 
-func (m *telemetryAgent) RegisterFloat64GaugeCallback(f func() []ObserverFloat64, name string, options ...api.Float64ObservableGaugeOption) (api.Registration, error) {
+func (m *telemetryAgent) RegisterFloat64GaugeCallback(f Float64Callback, name string, options ...api.Float64ObservableGaugeOption) (api.Registration, error) {
 	if m == nil || m.meter == nil {
 		return nil, ErrInvalidMetric
 	}
@@ -270,18 +265,19 @@ func (m *telemetryAgent) RegisterFloat64GaugeCallback(f func() []ObserverFloat64
 		return nil, err
 	}
 	return m.meter.RegisterCallback(func(ctx context.Context, o api.Observer) error {
-		for _, v := range f() {
-			o.ObserveFloat64(g, v.Value, v.Options...)
-		}
-		return nil
+		v, err := f()
+		o.ObserveFloat64(g, v.Value, v.Options...)
+		return err
 	}, g)
 }
 
+type Int64Callback func() (ObserverInt64, error)
 type ObserverInt64 struct {
 	Value   int64
 	Options []api.ObserveOption
 }
 
+type Float64Callback func() (ObserverFloat64, error)
 type ObserverFloat64 struct {
 	Value   float64
 	Options []api.ObserveOption

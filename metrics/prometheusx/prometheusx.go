@@ -71,21 +71,6 @@ func (ms *prometheusServer) setCollector(opt CollectorOpt, collector prometheus.
 	ms.collectorMap[opt.String()] = collector
 }
 
-func (ms *prometheusServer) UnregisterByOpts(opt CollectorOpt) {
-	ms.lock.RLock()
-	defer ms.lock.RUnlock()
-	collector, ok := ms.collectorMap[opt.String()]
-	if ok {
-		ms.UnregisterByCollector(collector)
-	}
-}
-
-func (ms *prometheusServer) UnregisterByCollector(collector prometheus.Collector) {
-	ms.lock.Lock()
-	defer ms.lock.Unlock()
-	ms.registry.Unregister(collector)
-}
-
 func (ms *prometheusServer) RegisterGauge(opt CollectorOpt) prometheus.Gauge {
 	collector := prometheus.NewGauge(prometheus.GaugeOpts(opt))
 	ms.setCollector(opt, collector)

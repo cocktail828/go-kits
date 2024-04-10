@@ -16,9 +16,12 @@ type Config struct {
 	// leap seconds, etc. The default is not to remove old log files based on age.
 	MaxAge int `toml:"maxage" yaml:"maxage" default:"7"`
 
-	// MaxBackups is the maximum number of old log files to retain.  The default is to retain all old log files (though
+	// MaxCount is the maximum number of old log files to retain.  The default is to retain all old log files (though
 	// MaxAge may still cause them to get deleted.)
-	MaxBackups int `toml:"maxbackups" yaml:"maxbackups" default:"5"`
+	MaxCount int `toml:"maxcount" yaml:"maxcount" default:"5"`
+
+	// AddSource determain whether add file:line to log file.  The default is true
+	AddSource bool `toml:"addsource" yaml:"addsource" default:"true"`
 
 	// Compress determines if the rotated log files should be compressed using gzip.
 	Compress bool `toml:"compress" yaml:"compress" default:"false"`

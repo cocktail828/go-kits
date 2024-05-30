@@ -11,7 +11,7 @@ func TestSlog(t *testing.T) {
 		Level:      "error",
 		Filename:   "/log/server/error.log",
 		MaxSize:    100,
-		MaxBackups: 1,
+		MaxCount: 1,
 		MaxAge:     1,
 		Compress:   false,
 	})

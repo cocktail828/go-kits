@@ -24,11 +24,16 @@ func NewLoggerWithLumberjack(cfg Config) Logger {
 		}
 	}())
 
-	return NewLoggerWithSlog(slog.New(slog.NewJSONHandler(&lumberjack.Logger{
-		Filename:   cfg.Filename,
-		MaxSize:    cfg.MaxSize,
-		MaxBackups: cfg.MaxBackups,
-		MaxAge:     cfg.MaxAge,
-		Compress:   cfg.Compress,
-	}, &slog.HandlerOptions{Level: &lvl})))
+	return NewLoggerWithSlog(slog.New(slog.NewJSONHandler(
+		&lumberjack.Logger{
+			Filename:   cfg.Filename,
+			MaxSize:    cfg.MaxSize,
+			MaxBackups: cfg.MaxCount,
+			MaxAge:     cfg.MaxAge,
+			Compress:   cfg.Compress,
+		}, &slog.HandlerOptions{
+			AddSource: cfg.AddSource,
+			Level:     &lvl,
+		},
+	)))
 }
